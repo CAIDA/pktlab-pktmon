@@ -5,11 +5,11 @@
 
 - `libpktlab` with SSL support. This can be obtained by following the instructions in [installing the PacketLab software package](https://packetlab.github.io/tutorial/installation/) (from pre-built binaries or from source).
 - The latest release of [WASI-SDK](https://github.com/WebAssembly/wasi-sdk), where this link provides the instructions to install the WASI SDK (from pre-built binaries or from source).
-> WASI SDK is used to compile the monitor C code into a WebAssembly binary, with the `wasi-libc` library support for the memory manipulation functions. We won't use any system calls provided by the `wasi-libc` due to security concerns.
+> WASI SDK is used to compile the monitor C code into a WebAssembly binary (i.e. the monitor binary), with the `wasi-libc` library support for the memory manipulation functions. We won't use any system calls provided by the `wasi-libc` due to security concerns.
 
 ## Compile Monitor Instructions
 
-Run `pktmon.sh` to compile the C code into a WebAssembly binary.
+Run `pktmon.sh` to compile the C code into a monitor binary.
 
 The usage of the `pktmon.sh` script is as follows:
 
@@ -27,7 +27,7 @@ and you have a monitor C code named `any_monitor.c`, then you can run the follow
 bash pktmon.sh /opt/pktlab /opt/wasi-sdk any_monitor
 ```
 
-This will generate a WebAssembly binary named `any_monitor.wasm` in the current
+This will generate a monitor binary named `any_monitor.wasm` in the current
 directory, and output the SHA256 digest of the monitor in the `any_monitor.digest` file.
 
 You can then use `ppksman` from the `pktlab` Python3 package to sign a new `exppriv` or `delpriv` certificate with the monitor's digest, which you can then distribute with the compiled monitor to expermenters for them to use to contact your pktlab endpoint.
