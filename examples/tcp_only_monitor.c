@@ -1,6 +1,5 @@
-// http_monitor.c
-// Sample monitor that only allows HTTP traffic
-// This sample will only check request method and "HTTP" header in response
+// tcp_only_monitor.c
+// Sample monitor that only allows TCP traffic
 
 #include "monitor_helper.h"
 #include "pktlab.h"

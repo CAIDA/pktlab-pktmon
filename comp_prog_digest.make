@@ -1,2 +1,2 @@
 comp_prog_digest:
-	$(CC) -Wall -I../include -std=gnu99 -L../lib $@.c -lpktlab -lpthread -ldl -o $@
+	$(CC) -Wall -I$(PKTLAB_PKG_INC_PATH) -std=gnu99 $@.c $(PKTLAB_PKG_LIB_PATH) -lpthread -lssl -lcrypto -ldl -o $@

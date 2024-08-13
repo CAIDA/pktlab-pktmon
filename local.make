@@ -1,4 +1,4 @@
-CC           := $(WASI_SDK_PATH)/bin/clang --sysroot=$(WASI_SDK_PATH)/share/wasi-sysroot -I../include -I. -O3
+CC           := $(WASI_SDK_PATH)/bin/clang --sysroot=$(WASI_SDK_PATH)/share/wasi-sysroot -I$(PKTLAB_PKG_INC_PATH) -I. -O3
 IMPORT_FUNC  := import_func
 LDFLAGS      := -Wl,--no-entry -Wl,--export-dynamic -Wl,--growable-table -Wl,--allow-undefined-file=$(IMPORT_FUNC) -Xlinker --import-memory=monitor,memory
 AR           := $(WASI_SDK_PATH)/bin/llvm-ar

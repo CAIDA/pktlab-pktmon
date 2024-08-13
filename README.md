@@ -1,47 +1,39 @@
-# WebAssembly based monitor
+# PacketLab Monitor Builder (`pktmon`)
+> For building pktlab monitors!
 
 ## Prerequisites
 
-- [WASI-SDK](https://github.com/WebAssembly/wasi-sdk): This link provides the instructions to install the WASI SDK (from pre-built binaries or from source).
+- `libpktlab` with SSL support. This can be obtained by following the instructions in [installing the PacketLab software package](https://packetlab.github.io/tutorial/installation/) (from pre-built binaries or from source).
+- The latest release of [WASI-SDK](https://github.com/WebAssembly/wasi-sdk), where this link provides the instructions to install the WASI SDK (from pre-built binaries or from source).
+> WASI SDK is used to compile the monitor C code into a WebAssembly binary, with the `wasi-libc` library support for the memory manipulation functions. We won't use any system calls provided by the `wasi-libc` due to security concerns.
 
-WASI SDK is used to compile the C code into a WebAssembly binary, with the
-`wasi-libc` library support for the memory manipulation functions. We won't use
-any system calls provided by the `wasi-libc` due to security concerns.
+## Compile Monitor Instructions
 
-## Build Instructions
+Run `pktmon.sh` to compile the C code into a WebAssembly binary.
 
-Run `build.sh` to compile the C code into a WebAssembly binary.
-
-The usage of the `build.sh` script is as follows:
+The usage of the `pktmon.sh` script is as follows:
 
 ```sh
 # You should have the C code named `<name-of-monitor>.c` in the current directory
 # Default name of the monitor is "monitor", which needs `monitor.c` to be present in the current directory
-bash build.sh <path-to-wasi-sdk> <name-of-monitor(default to "monitor")>
+bash pktmon.sh <path-to-pktlab-pkg> <path-to-wasi-sdk> <name-of-monitor(default to "monitor")>
 ```
 
-For example, if the WASI SDK is installed in the `/opt/wasi-sdk` directory, and
-you have a C code named `any_monitor.c`, then you can run the following command:
+For example, if the PacketLab software package is installed at the `/opt/pktlab` directory,
+WASI SDK is installed at the `/opt/wasi-sdk` directory,
+and you have a monitor C code named `any_monitor.c`, then you can run the following command:
 
 ```sh
-bash build.sh /opt/wasi-sdk any_monitor
+bash pktmon.sh /opt/pktlab /opt/wasi-sdk any_monitor
 ```
 
 This will generate a WebAssembly binary named `any_monitor.wasm` in the current
 directory, and output the SHA256 digest of the monitor in the `any_monitor.digest` file.
 
-Then, use `ppksman` to sign a new certificate with the monitor's digest, put the
-certificate and the monitor in the correct directory under the controller side,
-and then run the controller.
+You can then use `ppksman` from the `pktlab` Python3 package to sign a new `exppriv` or `delpriv` certificate with the monitor's digest, which you can then distribute with the compiled monitor to expermenters for them to use to contact your pktlab endpoint.
+<!--put the certificate and the monitor in `~/.pktlab/certs` and `~/.pktlab/progs`, respectively, configure `xpmgr.conf` under the `~/.pktlab` to use the certificate, and the run `pktxpmgr` to perform measurements.-->
 
-## Persistent memory database
-
-The persistent memory database is used to store the persistent memory of the
-monitors. By default, the persistent memory database is stored in the
-`~/.pktlab/endpt.persistent` on the endpoint side. For each monitor, the
-persistent memory is isolated by the unique key of the monitor(`cert_key_id+serial_number+index_in_cert`).
-
-## How to write a monitor
+## How to Write a Custom Monitor
 
 ### Monitor Template
 
@@ -58,32 +50,23 @@ with the corresponding functions:
 - `ndata`: `check_pktlab_message_ndata`
 - `ncap`: `check_pktlab_message_ncap`
 
-### Return Values
+### Function Return Values
 
-The monitor should return `0` if the packet is allowed, and a non-zero value if
-the packet is not allowed. The non-zero value can be used to indicate the reason
-for dropping the packet.
-
-The valid non-zero values that used to indicate the reason for dropping the
-packet should within `1 <= REASON_CODE <= UINT16_MAX`. We define the return type of the
-check functions as `int32_t`, and the return value outside the range of `1 <= REASON_CODE <= UINT16_MAX`
-will be treated as an error.
-
+The monitor check functions's return value will determine if the request/notification message is allowed or not.
 Specifically, the return value `rv` of the check functions should be:
 
-1. `rv == 0`: The packet is allowed.
-2. `1 <= rv < UINT16_MAX`: The packet is not allowed, and the reason for dropping the packet is `REASON_CODE`.
-3. `rv >= UINT16_MAX`: The packet is not allowed, and the reason for dropping the packet is an error.
+1. `rv == 0`: The message is allowed.
+2. `1 <= rv < UINT16_MAX`: The message is not allowed, and `rv` is the reason for dropping the message.
+3. `rv >= UINT16_MAX`: The message is not allowed, and the reason for dropping the message is an error in the monitor.
+4. `rv < 0`: The message is not allowed, and the reason for dropping the packet is intentionally hidden by the monitor.
 
-If the return value comes from controller check functions, as known as non-`ndata` messages, the endpoint will
-return a monitor reject with error id 0 or monitor unknown (if `report_crash` is configured on endpoint) error to the controller.
+For not allowed requests (non-`ndata` messages for now), a monitor reject (`PKTLAB_ECTLMONREJ`) result message is returned when `1 <= rv < UINT16_MAX` (`rv` returned as `errid`), or `rv < 0` (`errid` is 0), or `rv >= UINT16_MAX` when the endpoint is not configured to report crash (`report_crash` for reference endpoint `pktendpt`/`pktlabme`; `errid` is 0);
+a monitor unknown (`PKTLAB_ECTLMONUKN`) result message is returned when `rv >= UINT16_MAX` and the endpoint is configured to report crash.
 
-If the return value comes from `ndata` message, the endpoint will drop the packet and send a `nblock` message to the controller (if `report_crash` is configured on endpoint) with the corresponding monitor information.
+For not allowed notifications (`ndata` message for now), a nblock notification is returned when `1 <= rv < UINT16_MAX` (`rv` returned as `monerrid`) or when `rv >= UINT16_MAX` and the endpoint is configured to report crash (`monerrid` is 0).
+The not allowed notifications are otherwise just dropped silently.
 
-4. `rv < 0`: The packet is not allowed, and the reason for dropping the packet is an error.
-
-The endpoint will return a monitor reject with error id 0 if the message is not
-`ndata` and will just drop the packet if the message is `ndata`.
+The rejecting/complaining monitor indx is always returned when a monitor reject/monitor unknown/nblock message is returned.
 
 ### Helper Functions
 
@@ -123,26 +106,33 @@ Some example monitors are provided in the `example_monitors` directory. You can
 use these monitors as a reference to write your own monitor.
 
 1. `icmp_limit_monitor.c`: This monitor is used to limit the number of ICMP
-   packets sent by the user program. The user program can send a maximum of `10`
+   packets sent by the controller. The controller can send a maximum of `10`
    ICMP packets, and the monitor will drop any ICMP packet sent after the limit
    is reached. No matter whether the controller is restarted or the endpoint is
    restarted, the monitor will keep the state of the number of ICMP packets sent
    based on the persistent memory.
 
-2. `http_monitor.c`: This monitor will only allow the user program to send HTTP
-   requests and receive HTTP responses. The monitor is designed drop any packet
+2. `http_monitor.c`: This monitor will only allow the controller to send HTTP
+   requests and receive HTTP responses. The monitor is designed to drop any packet
    that is not an HTTP request or response. However, to simplify the implementation,
    the monitor will only check request methods and "HTTP" in the response status line.
    So, strictly, this monitor is not designed to be used in a real-world scenario,
    it is just an example to show how to write a monitor.
 
+3. `tcp_only_monitor.c`: This monitor will only allow the controller to communicate over TCP.
+
+4. `pass_all_monitor.c`: This monitor will allow everything.
+
 Use the following commands to build the example monitors:
 
 ```sh
-bash build.sh <path-to-wasi-sdk> examples/icmp_limit_monitor
-bash build.sh <path-to-wasi-sdk> examples/http_monitor
+bash pktmon.sh <path-to-pktlab-pkg> <path-to-wasi-sdk> examples/icmp_limit_monitor
+bash pktmon.sh <path-to-pktlab-pkg> <path-to-wasi-sdk> examples/http_monitor
+bash pktmon.sh <path-to-pktlab-pkg> <path-to-wasi-sdk> examples/tcp_only_monitor
+bash pktmon.sh <path-to-pktlab-pkg> <path-to-wasi-sdk> examples/pass_all_monitor
 ```
 
+<!--
 ### Test Your Monitor
 To test your monitor without generating a new certificate, you can copy your
 compiled monitor to the `monitor_wasm` directory and rename it to `test.wasm`.
@@ -154,3 +144,4 @@ be the root directory of the `pktlabme`).
 The `test.wasm` monitor will be put at the head of the monitor list, and other
 monitors that receive from the controller will be put after the `test.wasm`
 monitor.
+-->
