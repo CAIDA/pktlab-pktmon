@@ -1,3 +1,5 @@
 # callback functions
 read_vmem_region
 persistent_memory_flush
+endpoint_debug_enabled
+monitor_debug
