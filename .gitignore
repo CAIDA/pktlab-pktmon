@@ -1,0 +1,4 @@
+*.wasm
+*.wat
+*.digest
+comp_prog_digest

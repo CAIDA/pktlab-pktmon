@@ -5,15 +5,23 @@ AR           := $(WASI_SDK_PATH)/bin/llvm-ar
 LD           := $(WASI_SDK_PATH)/bin/llvm-ld
 MONITOR_NAME := $(MONITOR_NAME)
 
-EXPORT_FUNC  := -Wl,--export=check_pktlab_message_nopen  \
-				-Wl,--export=check_pktlab_message_nclose \
-				-Wl,--export=check_pktlab_message_nsend  \
-				-Wl,--export=check_pktlab_message_ndata  \
-				-Wl,--export=check_pktlab_message_ncap   \
-				-Wl,--export=malloc \
-				-Wl,--export=free
+EXPORT_FUNC  := check_pktlab_message_nopen  \
+				check_pktlab_message_nclose \
+				check_pktlab_message_nsend  \
+				check_pktlab_message_ndata  \
+				check_pktlab_message_ncap   \
+				malloc \
+				free
 
-LDFLAGS      := $(LDFLAGS) $(EXPORT_FUNC)
+OPT_EXPORT   := pktlab_message_nopen_result \
+				pktlab_message_nclose_result \
+				pktlab_message_nsend_result \
+				pktlab_message_ncap_result
+
+EXPORT_FUNC_LDFLAGS := $(foreach func,$(EXPORT_FUNC),-Wl,--export=$(func))
+OPT_LDFLAGS  := $(foreach func,$(OPT_EXPORT),-Wl,--export-if-defined=$(func))
+
+LDFLAGS      := $(LDFLAGS) $(EXPORT_FUNC_LDFLAGS) $(OPT_LDFLAGS)
 
 MONITOR_SRC  := $(MONITOR_NAME).c
 
