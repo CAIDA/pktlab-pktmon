@@ -4,6 +4,20 @@
 #include "monitor_helper.h"
 #include "pktlab.h"
 
+/** Optional **/
+uint32_t initialize(void* info, void* persistent_memory,
+                    uint32_t persistent_memory_len) {
+    // do nothing
+    return 0;
+}
+
+/** Optional **/
+uint32_t finalize(void* info, void* persistent_memory,
+                  uint32_t persistent_memory_len) {
+    // do nothing
+    return 0;
+}
+
 int32_t check_pktlab_message_nopen(uint8_t sktid, uint8_t family, uint8_t proto,
                                    uint32_t rbufsz, uint8_t laddrlen,
                                    uint8_t lportlen, uint8_t raddrlen,
@@ -33,7 +47,6 @@ void pktlab_message_nopen_result(uint8_t sktid, uint8_t family, uint8_t proto,
     // do nothing
 }
 
-
 int32_t check_pktlab_message_nclose(uint8_t sktid, void* persistent_memory,
                                     uint32_t persistent_memory_len) {
     /**
@@ -51,7 +64,6 @@ void pktlab_message_nclose_result(uint8_t sktid, void* persistent_memory,
                                   enum pktlab_status errid) {
     // do nothing
 }
-
 
 int32_t check_pktlab_message_nsend(uint8_t sktid, uint8_t family, uint8_t proto,
                                    pktlab_time_t time, uint16_t tag,

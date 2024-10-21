@@ -16,7 +16,9 @@ EXPORT_FUNC  := check_pktlab_message_nopen  \
 OPT_EXPORT   := pktlab_message_nopen_result \
 				pktlab_message_nclose_result \
 				pktlab_message_nsend_result \
-				pktlab_message_ncap_result
+				pktlab_message_ncap_result \
+				initialize \
+				finalize
 
 EXPORT_FUNC_LDFLAGS := $(foreach func,$(EXPORT_FUNC),-Wl,--export=$(func))
 OPT_LDFLAGS  := $(foreach func,$(OPT_EXPORT),-Wl,--export-if-defined=$(func))

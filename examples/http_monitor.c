@@ -6,8 +6,15 @@
 #include "pktlab.h"
 #include "string.h"
 
+#include <stdio.h>
+
 const char* http_methods[] = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT"};
 
+uint32_t initialize(void* info, void* persistent_memory,
+                    uint32_t persistent_memory_len) {
+    sprintf(info, "initialize_string");
+    return strlen(info) + 1;
+}
 
 int32_t check_pktlab_message_nopen(uint8_t sktid, uint8_t family, uint8_t proto,
                                    uint32_t rbufsz, uint8_t laddrlen,

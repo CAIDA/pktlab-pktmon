@@ -41,7 +41,43 @@ The template for the monitor is provided in the `monitor.template.c` file. You
 can start by copying the contents of this file into a new file, and then
 implement the corresponding checks in the template.
 
-Currently, the monitor is implemented to check the following packetlab messages
+There are two optional functions that you can implement in the monitor, which
+will be invoked by the endpoint before processing the Packetlab message and
+after the connection is about to be closed. These functions are:
+
+```c
+/**
+ * This function is called before the endpoint processes the Packetlab message.
+ * You can use this function to initialize the monitor state for the message
+ * checking, as well as report the monitor's status back to the controller.
+ *
+ * @param info[out]: The information to be reported back to the controller.
+ * @param persistent_memory[in]: The persistent memory region for the monitor.
+ * @param persistent_memory_len[in]: The length of the persistent memory region.
+ * @return: Size of the info parameter. The maximum size is defined by
+ *          PKTLAB_LINFO_INFO_MAX in pktlab.h. If the size of the info parameter
+ *          is greater than PKTLAB_LINFO_INFO_MAX, the sender will truncate the
+ *          response message in `info` to PKTLAB_LINFO_INFO_MAX.
+ */
+uint32_t initialize(void* info, void* persistent_memory, uint32_t persistent_memory_len);
+
+/**
+ * This function is called when the connection is about to be closed. You can
+ * use this function to clean up the monitor state and report the monitor's
+ * status back to the controller.
+ *
+ * @param info[out]: The information to be reported back to the controller.
+ * @param persistent_memory[in]: The persistent memory region for the monitor.
+ * @param persistent_memory_len[in]: The length of the persistent memory region.
+ * @return: Size of the info parameter. The maximum size is defined by
+ *          PKTLAB_LINFO_INFO_MAX in pktlab.h. If the size of the info parameter
+ *          is greater than PKTLAB_LINFO_INFO_MAX, the sender will truncate the
+ *          response message in `info` to PKTLAB_LINFO_INFO_MAX.
+ */
+uint32_t finallize(void *info, void* persistent_memory, uint32_t persistent_memory_len);
+```
+
+Currently, the monitor is implemented to check the following Packetlab messages
 with the corresponding functions:
 
 - `nopen`: `check_pktlab_message_nopen`
@@ -50,8 +86,29 @@ with the corresponding functions:
 - `ndata`: `check_pktlab_message_ndata`
 - `ncap`: `check_pktlab_message_ncap`
 
+Also, the monitor can be implemented to handle the result messages from the
+endpoint after the endpoint processes Packetlab messages. These functions have
+the same arguments as the corresponding check functions, and have one additional
+argument `enum pktlab_status errid` to indicate the result of the endpoint
+processing the Packetlab message. These functions will be useful when the endpoint
+fails to process the Packetlab message for some reason, and the monitor can take
+corrective actions based on the result of the endpoint processing the Packetlab
+message.
+
+The corresponding functions are:
+
+- `pktlab_message_nopen_result`
+- `pktlab_message_nclose_result`
+- `pktlab_message_nsend_result`
+- `pktlab_message_ncap_result`
+
+All of these result functions are optional, and you can choose to implement only
+the functions that are relevant to your monitor. `ndata` messages is sent by the
+endpoint to the controller so it doesn't have a corresponding result function.
+
 ### Function Return Values
 
+#### Monitor Check Functions
 The monitor check functions's return value will determine if the request/notification message is allowed or not.
 Specifically, the return value `rv` of the check functions should be:
 
