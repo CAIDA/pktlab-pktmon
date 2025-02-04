@@ -85,6 +85,7 @@ with the corresponding functions:
 - `nsend`: `check_pktlab_message_nsend`
 - `ndata`: `check_pktlab_message_ndata`
 - `ncap`: `check_pktlab_message_ncap`
+- `nctl`: `check_pktlab_message_nctl`
 
 Also, the monitor can be implemented to handle the result messages from the
 endpoint after the endpoint processes Packetlab messages. These functions have
@@ -101,6 +102,7 @@ The corresponding functions are:
 - `pktlab_message_nclose_result`
 - `pktlab_message_nsend_result`
 - `pktlab_message_ncap_result`
+- `pktlab_message_nctl_result`
 
 All of these result functions are optional, and you can choose to implement only
 the functions that are relevant to your monitor. `ndata` messages is sent by the

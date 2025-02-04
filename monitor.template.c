@@ -126,3 +126,25 @@ void pktlab_message_ncap_result(uint8_t sktid, uint8_t family, uint8_t proto,
                                 enum pktlab_status errid) {
     // do nothing
 }
+
+int32_t check_pktlab_message_nctl(uint8_t sktid, uint8_t family, uint8_t proto,
+                                  pktlab_time_t time, uint8_t command,
+                                  void* persistent_memory,
+                                  uint32_t persistent_memory_len) {
+    /**
+     * return 0 if the message is valid, non-zero otherwise
+     * For detailed return value rules, see README.md
+     */
+
+    /* Your code here */
+    return -1;
+}
+
+/** Optional **/
+void pktlab_message_nctl_result(uint8_t sktid, uint8_t family, uint8_t proto,
+                                pktlab_time_t time, uint8_t command,
+                                void* persistent_memory,
+                                uint32_t persistent_memory_len,
+                                enum pktlab_status errid) {
+    // do nothing
+}
